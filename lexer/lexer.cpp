@@ -12,6 +12,9 @@ static IoC io;
 
 static TokenC tokenize_singleCharacterSymbols()
 {
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+
   TokenTypesE tokenType;
 
   switch (io.advance())
@@ -32,7 +35,7 @@ static TokenC tokenize_singleCharacterSymbols()
       tokenType = SEMICOLON;
       break;
   }
-  return TokenC(tokenType);
+  return TokenC(tokenType, startLine, startColumn);
 }
 
 static bool isKeyword(string str)
@@ -44,6 +47,9 @@ static bool isKeyword(string str)
 
 static TokenC tokenize_characters()
 {
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+
   string currentCharacters = "";
 
   while(!io.empty())
@@ -69,11 +75,15 @@ static TokenC tokenize_characters()
   else 
     tokenType = IDENTIFIER;
 
-  return TokenC(tokenType, currentCharacters);
+  return TokenC(tokenType, currentCharacters,
+                startLine, startColumn);
 }
 
 static TokenC tokenize_integer()
 {
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+
   string current_numbers = "";
   while (io.peek() == '0')
     io.advance();
@@ -81,7 +91,8 @@ static TokenC tokenize_integer()
   while (isdigit(io.peek()))
     current_numbers += io.advance();
   
-  return TokenC(INTEGER, current_numbers);
+  return TokenC(INTEGER, current_numbers,
+                startLine, startColumn);
 }
 
 vector<TokenC> lex(string filePath)
@@ -114,4 +125,5 @@ vector<TokenC> lex(string filePath)
         break;
     }
   }
+  return tokenVector;
 }

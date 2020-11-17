@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <deque>
+#include <cstdint>
 
 using namespace std;
 
@@ -19,7 +20,7 @@ IoC::IoC(string filePath)
   catch(const std::exception& e)
   {
     cerr << "Invalid input file!" << endl;
-    exit -1;
+    exit(-1);
   }
   
   stringstream sstream;
@@ -29,12 +30,27 @@ IoC::IoC(string filePath)
   buffer = deque<char>(sstreamStr.cbegin(), sstreamStr.cend());
 
   inFile.close();
+
+  line = 1;
+  column = 0;
+}
+
+void IoC::checkIncrementLine()
+{
+  if (peek() == '\n')
+  {
+    column = 1;
+    line++;
+  }
 }
 
 char IoC::advance()
 {
   const char nextChar = buffer.front();
   buffer.pop_front();
+
+  column++;
+  checkIncrementLine();
   return nextChar;
 }
 
@@ -56,9 +72,22 @@ void IoC::skip()
 {
   if (buffer.size())
     buffer.pop_front();
+  
+  column++;
+  checkIncrementLine();
 }
 
 bool IoC::empty()
 {
   return buffer.empty();
+}
+
+uint64_t IoC::getLine() const
+{
+  return line;
+}
+
+uint64_t IoC::getColumn() const
+{
+  return column;
 }

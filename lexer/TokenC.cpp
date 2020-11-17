@@ -5,13 +5,17 @@
 
 using namespace std;
 
-TokenC::TokenC(TokenTypesE tokenType)
+TokenC::TokenC(const TokenTypesE tokenType, const uint64_t line, const uint64_t column)
 {
   this->tokenType = tokenType;
+  this->line = line;
+  this->column = column;
 }
 
-TokenC::TokenC(TokenTypesE tokenType, string value)
+TokenC::TokenC(const TokenTypesE tokenType, const string& value, const uint64_t line, const uint64_t column)
 {
   this->tokenType = tokenType;
   this->value = value;
+  this->line = line;
+  this->column = column;
 }
