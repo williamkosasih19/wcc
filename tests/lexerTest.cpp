@@ -15,28 +15,28 @@ int main(int argc, char** argv)
     cout << "Type : ";
     switch (token.tokenType)
     {
-      case OPEN_CURLY_BRACKET:
+      case TKN_OPEN_CURLY_BRACKET:
         cout << "{";
         break;
-      case CLOSE_CURLY_BRACKET:
+      case TKN_CLOSE_CURLY_BRACKET:
         cout << "}";
         break;
-      case OPEN_PARENTHESIS:
+      case TKN_OPEN_PARENTHESIS:
         cout << "(";
         break;
-      case CLOSE_PARENTHESIS:
+      case TKN_CLOSE_PARENTHESIS:
         cout << ")";
         break;
-      case SEMICOLON:
+      case TKN_SEMICOLON:
         cout << ";";
         break;
-      case KEYWORD:
+      case TKN_KEYWORD:
         cout << "KEYWORD";
         break;
-      case IDENTIFIER:
+      case TKN_IDENTIFIER:
         cout << "IDENTIFIER";
         break;
-      case INTEGER:
+      case TKN_INTEGER:
         cout << "INTEGER";
         break;
     }

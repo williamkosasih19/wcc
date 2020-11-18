@@ -10,32 +10,105 @@ using namespace std;
 
 static IoC io;
 
+static TokenC tokenize_star()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  if (io.peek() == '=')
+  {
+    
+  }
+  else if(io.peek() == '/')
+  {
+    
+  }
+  return TokenC(TKN_ARITH_OP, "*", startLine, startColumn, TKN_STAR);
+}
+
+static TokenC tokenize_slash()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  
+  if (io.peek() == '=')
+  {
+    
+  }
+  else if(io.peek() == '/')
+  {
+    
+  }
+  return TokenC(TKN_ARITH_OP, "/", startLine, startColumn, TKN_SLASH);
+}
+
+static TokenC tokenize_plus()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  
+  if (io.peek() == '+')
+  {
+    
+  }
+  else if(io.peek() == '=')
+  {
+    
+  }
+  return TokenC(TKN_ARITH_OP, "+", startLine, startColumn, TKN_PLUS);
+}
+
+static TokenC tokenize_minus()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  
+  if (io.peek() == '-')
+  {
+    
+  }
+  else if(io.peek() == '=')
+  {
+    
+  }
+  return TokenC(TKN_ARITH_OP, "-", startLine, startColumn, TKN_MINUS);
+}
+
 static TokenC tokenize_singleCharacterSymbols()
 {
   const uint64_t startLine = io.getLine();
   const uint64_t startColumn = io.getColumn();
 
   TokenTypesE tokenType;
+  
+  char symbol;
 
-  switch (io.advance())
+  switch (symbol = (io.advance()))
   {
     case '{':
-      tokenType = OPEN_CURLY_BRACKET;
+      tokenType = TKN_OPEN_CURLY_BRACKET;
       break;
     case '}':
-      tokenType = CLOSE_CURLY_BRACKET;
+      tokenType = TKN_CLOSE_CURLY_BRACKET;
       break;
     case '(':
-      tokenType = OPEN_PARENTHESIS;
+      tokenType = TKN_OPEN_PARENTHESIS;
       break;
     case ')':
-      tokenType = CLOSE_PARENTHESIS;
+      tokenType = TKN_CLOSE_PARENTHESIS;
       break;
     case ';':
-      tokenType = SEMICOLON;
+      tokenType = TKN_SEMICOLON;
       break;
   }
-  return TokenC(tokenType, startLine, startColumn);
+  return TokenC(tokenType, "" + symbol, startLine, startColumn);
 }
 
 static bool isKeyword(string str)
@@ -71,9 +144,9 @@ static TokenC tokenize_characters()
   TokenTypesE tokenType;
 
   if (isKeyword(currentCharacters))
-    tokenType = KEYWORD;
+    tokenType = TKN_KEYWORD;
   else 
-    tokenType = IDENTIFIER;
+    tokenType = TKN_IDENTIFIER;
 
   return TokenC(tokenType, currentCharacters,
                 startLine, startColumn);
@@ -91,7 +164,7 @@ static TokenC tokenize_integer()
   while (isdigit(io.peek()))
     current_numbers += io.advance();
   
-  return TokenC(INTEGER, current_numbers,
+  return TokenC(TKN_INTEGER, current_numbers,
                 startLine, startColumn);
 }
 
@@ -119,6 +192,18 @@ vector<TokenC> lex(string filePath)
         break;
       case '0' ... '9':
         tokenVector.push_back(tokenize_integer());
+        break;
+      case '+':
+        tokenVector.push_back(tokenize_plus());
+        break;
+      case '-':
+        tokenVector.push_back(tokenize_minus());
+        break;
+      case '*':
+        tokenVector.push_back(tokenize_star());
+        break;
+      case '/':
+        tokenVector.push_back(tokenize_slash());
         break;
       default:
         io.skip();
