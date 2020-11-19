@@ -2,8 +2,6 @@
 
 int interpretExprAst(AstNodeC* const astNode)
 {
-  if (astNode == nullptr)
-    return 0;
   int leftValue, rightValue;
   
   if (astNode->left)

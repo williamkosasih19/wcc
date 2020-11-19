@@ -29,6 +29,55 @@ static astTypeE getArithAstTypeFromToken(const TokenC token)
   exit(-1);
 }
 
+static AstNodeC* parse_multiplicativeExpr()
+{
+  AstNodeC* left;
+  
+  const TokenC leftToken = tokenHandler.tokenMustBe(TKN_INTEGER);
+  left = createAstLeaf(AST_INTEGER, stoi(leftToken.value));
+  
+  if (tokenHandler.empty())
+    return left;
+  
+  while (tokenHandler.peekToken().secondTokenType == TKN_STAR ||
+         tokenHandler.peekToken().secondTokenType == TKN_SLASH)
+  {
+    const TokenC midToken = tokenHandler.advanceToken();
+    
+    AstNodeC* right;
+    const TokenC rightToken = tokenHandler.tokenMustBe(TKN_INTEGER);
+    right = createAstLeaf(AST_INTEGER, stoi(rightToken.value));
+    
+    left = createAstNode(getArithAstTypeFromToken(midToken), left, right, 0);
+    
+    if (tokenHandler.empty())
+      break;
+  }
+  return left;
+}
+
+static AstNodeC* parse_additiveExpr()
+{
+  AstNodeC* left;
+  left = parse_multiplicativeExpr();
+  
+  if (tokenHandler.empty())
+    return left;
+    
+  while (true)
+  {
+    const TokenC midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
+    
+    AstNodeC* right = parse_multiplicativeExpr();
+    left = createAstNode(getArithAstTypeFromToken(midToken), left, right, 0);
+    
+    if (tokenHandler.empty())
+      break;
+  }
+  
+  return left;
+}
+
 static AstNodeC* parse_expr()
 {
   AstNodeC* left;
@@ -53,8 +102,5 @@ AstNodeC* parse(const vector<TokenC>& tokenVector)
 {
   tokenHandler = TokenHandlerC(tokenVector);
   
-  return parse_expr();
-  
-
-  
+  return parse_additiveExpr();
 }
