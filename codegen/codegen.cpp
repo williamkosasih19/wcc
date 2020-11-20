@@ -139,8 +139,6 @@ void codegen_printRegister(const uint32_t registerNumber)
   codegenOut.push_back(constructInstruction("call", "DEBUG_PRINTINT"));
 }
 
-// 
-
 void codegen_setup()
 {
   registers.freeAll();
@@ -179,7 +177,7 @@ void codegen_exit()
 
 //
 
-static int codegen_expr(const AstNodeC* const astNode)
+static int codegen_expr(const shared_ptr<AstNodeC> astNode)
 {
   int leftReg, rightReg;
   
@@ -188,26 +186,45 @@ static int codegen_expr(const AstNodeC* const astNode)
   if (astNode->right)
     rightReg = codegen_expr(astNode->right);
     
-  switch (astNode->type)
+  switch (astNode->expressionType)
   {
-    case AST_ADD:
+    case AST_EXPRESSION_ADD:
       return codegen_add(leftReg, rightReg);
-    case AST_SUBTRACT:
+    case AST_EXPRESSION_SUBTRACT:
       return codegen_subtract(leftReg, rightReg);
-    case AST_MULTIPLY:
+    case AST_EXPRESSION_MULTIPLY:
       return codegen_multiply(leftReg, rightReg);
-    case AST_DIVIDE:
+    case AST_EXPRESSION_DIVIDE:
       return codegen_divide(leftReg, rightReg);
-    case AST_INTEGER:
+    case AST_EXPRESSION_INTEGER:
       return codegen_load(astNode->intValue);
   }  
 }
 
-vector<string> codegen(const AstNodeC* const astNode)
+static void codegen_statement(const shared_ptr<AstNodeC> astNode)
+{
+  const uint32_t targetReg = codegen_expr(astNode->statementChild);
+  if (astNode->statementType == AST_STATEMENT_PRINT)
+    codegen_printRegister(targetReg);
+  registers.freeRegister(targetReg);
+  
+  return;
+}
+
+static void codegen_statements(const shared_ptr<AstNodeC> astNode)
+{
+  for (const shared_ptr<AstNodeC> childAstNode : astNode->statements)
+  {
+    codegen_statement(childAstNode);
+  }
+  return;
+}
+
+vector<string> codegen(const shared_ptr<AstNodeC> astNode)
 {
   codegen_setup();
-  const uint32_t targetReg = codegen_expr(astNode);
-  codegen_printRegister(targetReg);
+  
+  codegen_statements(astNode);
   
   codegen_exit();
   

@@ -1,5 +1,6 @@
 #include <components/TokenHandlerC.h>
 #include <components/TokenC.h>
+#include <common.h>
 
 #include <deque>
 #include <vector>
@@ -40,12 +41,8 @@ TokenC TokenHandlerC::tokenMustBe(TokenTypesE tokenType)
 {
   const TokenC currentToken = tokens.front(); 
   if (currentToken.tokenType != tokenType)
-  {
-    cerr << "unexpected tokenType : " << getTokenRepresentation(currentToken) << 
-    " - expected: " << getTokenTypeRepresentation(tokenType) << endl;
-    cerr << "at " << currentToken.line << ":" << currentToken.column << endl;
-    cerr << "[ " << currentToken.value << " ]" << endl;
-    exit (-1);
+  {    
+    fatal("FATAL ERROR", currentToken, tokenType);
   }
   tokens.pop_front();
   return currentToken;

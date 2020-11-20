@@ -1,9 +1,13 @@
 #include <ast/ast.h>
 
-AstNodeC* createAstNode(const astTypeE type, AstNodeC* const left,
-                        AstNodeC* const right, const int intValue)
+#include <memory>
+
+using namespace std;
+
+shared_ptr<AstNodeC> createAstNode(const astTypeE type, const shared_ptr<AstNodeC> left,
+                        const shared_ptr<AstNodeC> right, const int intValue)
 {
-  AstNodeC* astNodePtr = new AstNodeC();
+  shared_ptr<AstNodeC> astNodePtr = make_shared<AstNodeC>();
   
   astNodePtr->type = type;
   astNodePtr->left = left;
@@ -13,12 +17,12 @@ AstNodeC* createAstNode(const astTypeE type, AstNodeC* const left,
   return astNodePtr;
 }
 
-AstNodeC* createAstLeaf(const astTypeE type, const int intValue)
+shared_ptr<AstNodeC> createAstLeaf(const astTypeE type, const int intValue)
 {
   return createAstNode(type, nullptr, nullptr, intValue);
 }
 
-AstNodeC* createAstUnary(const astTypeE type, AstNodeC* const left,
+shared_ptr<AstNodeC> createAstUnary(const astTypeE type, const shared_ptr<AstNodeC> left,
                        const int intValue)
 {
   return createAstNode(type, left, nullptr, intValue);

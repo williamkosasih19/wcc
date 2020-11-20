@@ -1,3 +1,5 @@
+#include <common.h>
+
 #include <ast/ast.h>
 #include <components/TokenC.h>
 #include <components/TokenHandlerC.h>
@@ -10,18 +12,18 @@ using namespace std;
 
 static TokenHandlerC tokenHandler;
 
-static astTypeE getArithAstTypeFromToken(const TokenC token)
+static ast_expressionTypeE getExpressionAstTypeFromToken(const TokenC token)
 {
   switch(token.secondTokenType)
   {
     case TKN_PLUS:
-      return AST_ADD;
+      return AST_EXPRESSION_ADD;
     case TKN_MINUS:
-      return AST_SUBTRACT;
+      return AST_EXPRESSION_SUBTRACT;
     case TKN_STAR:
-      return AST_MULTIPLY;
+      return AST_EXPRESSION_MULTIPLY;
     case TKN_SLASH:
-      return AST_DIVIDE;
+      return AST_EXPRESSION_DIVIDE;
   }
   cerr << "BAD ARITH OPERATION TOKEN " << endl;
   cerr << "at " << token.line << ":" << token.column << endl;
@@ -29,14 +31,15 @@ static astTypeE getArithAstTypeFromToken(const TokenC token)
   exit(-1);
 }
 
-static AstNodeC* parse_multiplicativeExpr()
+static shared_ptr<AstNodeC> parse_multiplicativeExpr()
 {
-  AstNodeC* left;
+  shared_ptr<AstNodeC> left;
   
   const TokenC leftToken = tokenHandler.tokenMustBe(TKN_INTEGER);
-  left = createAstLeaf(AST_INTEGER, stoi(leftToken.value));
+  left = createAstLeaf(AST_EXPRESSION, stoi(leftToken.value));
+  left->expressionType = AST_EXPRESSION_INTEGER;
   
-  if (tokenHandler.empty())
+  if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
     return left;
   
   while (tokenHandler.peekToken().secondTokenType == TKN_STAR ||
@@ -44,63 +47,82 @@ static AstNodeC* parse_multiplicativeExpr()
   {
     const TokenC midToken = tokenHandler.advanceToken();
     
-    AstNodeC* right;
+    shared_ptr<AstNodeC> right;
     const TokenC rightToken = tokenHandler.tokenMustBe(TKN_INTEGER);
-    right = createAstLeaf(AST_INTEGER, stoi(rightToken.value));
+    right = createAstLeaf(AST_EXPRESSION, stoi(rightToken.value));
+    right->expressionType = AST_EXPRESSION_INTEGER;
     
-    left = createAstNode(getArithAstTypeFromToken(midToken), left, right, 0);
+    left = createAstNode(AST_EXPRESSION, left, right, 0);
+    left->expressionType = getExpressionAstTypeFromToken(midToken);
     
-    if (tokenHandler.empty())
+    if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
       break;
   }
   return left;
 }
 
-static AstNodeC* parse_additiveExpr()
+static shared_ptr<AstNodeC> parse_expr()
 {
-  AstNodeC* left;
+  shared_ptr<AstNodeC> left;
   left = parse_multiplicativeExpr();
   
-  if (tokenHandler.empty())
+  if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
     return left;
     
   while (true)
   {
     const TokenC midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
     
-    AstNodeC* right = parse_multiplicativeExpr();
-    left = createAstNode(getArithAstTypeFromToken(midToken), left, right, 0);
+    shared_ptr<AstNodeC> right = parse_multiplicativeExpr();
+    left = createAstNode(AST_EXPRESSION, left, right, 0);
+    left->expressionType = getExpressionAstTypeFromToken(midToken);
     
-    if (tokenHandler.empty())
+    if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
       break;
   }
   
   return left;
 }
 
-static AstNodeC* parse_expr()
+static shared_ptr<AstNodeC> parse_statement()
 {
-  AstNodeC* left;
+  const TokenC currentToken = tokenHandler.advanceToken();
   
-  const TokenC leftToken = tokenHandler.tokenMustBe(TKN_INTEGER);
+  shared_ptr<AstNodeC> statementAst = make_shared<AstNodeC>();
+  statementAst->type = AST_STATEMENT;
   
-  left = createAstLeaf(AST_INTEGER, stoi(leftToken.value));
-
-  if (tokenHandler.empty())
-    return left;
-    
-  const TokenC midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
+  if (currentToken.tokenType == TKN_KEYWORD)
+  {
+    if (currentToken.value == "print")
+      statementAst->statementType = AST_STATEMENT_PRINT;
+  }
+  else
+  {
+    fatal("UNRECOGNIZED STATEMENT", currentToken);
+  }
   
-  const astTypeE astType = getArithAstTypeFromToken(midToken);
+  statementAst->statementChild = parse_expr();
   
-  AstNodeC* right = parse_expr();
-  
-  return createAstNode(astType, left, right, 0);
+  tokenHandler.tokenMustBe(TKN_SEMICOLON);  
+  return statementAst;
 }
 
-AstNodeC* parse(const vector<TokenC>& tokenVector)
+static shared_ptr<AstNodeC> parse_statements()
+{
+  shared_ptr<AstNodeC> statementsAst = make_shared<AstNodeC>();
+  statementsAst->type = AST_STATEMENTS;
+  
+  while (tokenHandler.peekToken().tokenType != TKN_EOF)
+  {
+    statementsAst->statements.push_back(parse_statement());
+  }
+  
+  return statementsAst;
+}
+
+shared_ptr<AstNodeC> parse(const vector<TokenC>& tokenVector)
 {
   tokenHandler = TokenHandlerC(tokenVector);
   
-  return parse_additiveExpr();
+  return parse_statements();
 }

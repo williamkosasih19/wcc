@@ -113,7 +113,7 @@ static TokenC tokenize_singleCharacterSymbols()
 
 static bool isKeyword(string str)
 {
-  if (str == "int" || str == "return")
+  if (str == "int" || str == "return" || str == "print")
     return true;
   return false;
 }
@@ -210,5 +210,7 @@ vector<TokenC> lex(string filePath)
         break;
     }
   }
+  tokenVector.push_back(TokenC(TKN_EOF, -1, -1));
+  
   return tokenVector;
 }

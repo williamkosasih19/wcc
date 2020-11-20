@@ -1,6 +1,10 @@
 #include <ast/ast.h>
 
-int interpretExprAst(AstNodeC* const astNode)
+#include <memory>
+
+using namespace std;
+
+int interpretExprAst(const shared_ptr<AstNodeC> astNode)
 {
   int leftValue, rightValue;
   
@@ -9,17 +13,17 @@ int interpretExprAst(AstNodeC* const astNode)
   if (astNode->right)
     rightValue = interpretExprAst(astNode->right);
     
-  switch(astNode->type)
+  switch(astNode->expressionType)
   {
-    case AST_ADD:
+    case AST_EXPRESSION_ADD:
       return leftValue + rightValue;
-    case AST_SUBTRACT:
+    case AST_EXPRESSION_SUBTRACT:
       return leftValue - rightValue;
-    case AST_MULTIPLY:
+    case AST_EXPRESSION_MULTIPLY:
       return leftValue * rightValue;
-    case AST_DIVIDE:
+    case AST_EXPRESSION_DIVIDE:
       return leftValue / rightValue;
-    case AST_INTEGER:
+    case AST_EXPRESSION_INTEGER:
       return astNode->intValue;
   }
 }

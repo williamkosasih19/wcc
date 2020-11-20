@@ -9,15 +9,10 @@ _DEPS=*.h components/*.h ast/*.h
 
 $(OUTDIR)/%.o: */%.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CFLAGS) $(DBGFLAG)
+	
+$(OUTDIR)/%.o: %.cpp $(DEPS)
+	$(CXX) -c -o $@ $< $(CFLAGS) $(DBGFLAG)
 
-# $(OUTDIR)/%.o: tests/%.cpp $(DEPS)
-# 	$(CXX) -c -o $@ $< $(CFLAGS) $(DBGFLAG)
-	
-# $(OUTDIR)/%.o: ast/%.cpp $(DEPS)
-# 	$(CXX) -c -o $@ $< $(CFLAGS) $(DBGFLAG)
-	
-# $(OUTDIR)/%.o: ast/%.cpp $(DEPS)
-# 	$(CXX) -c -o $@ $< $(CFLAGS) $(DBGFLAG)
 
 TESTOBJS=lexer.o IoC.o lexerTest.o TokenC.o 
 
@@ -34,9 +29,9 @@ lexerTest: $(patsubst %,$(OUTDIR)/%,$(TESTOBJS))
 2parser: $(patsubst %,$(OUTDIR)/%,$(2PARSER))
 	$(CXX) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(DBGFLAG)
 	
-4ASSEMBLY=lexer.o IoC.o TokenC.o ast.o interpreter.o parser.o TokenHandlerC.o codegen.o 04_assembly.o
+4ASSEMBLY=lexer.o IoC.o TokenC.o ast.o interpreter.o parser.o TokenHandlerC.o codegen.o 04_assembly.o common.o
 4assembly: $(patsubst %,$(OUTDIR)/%,$(4ASSEMBLY))
 	$(CXX) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(DBGFLAG)
 
 clean:
-	rm out/*
+	rm out/*	

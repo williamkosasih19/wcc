@@ -1,0 +1,5 @@
+print 1 + 1;
+print 3;
+print 5;
+print 16;
+print 15*9;

@@ -15,5 +15,6 @@ enum TokenTypesE
   TKN_MINUS,
   TKN_STAR,
   TKN_SLASH,
-  TKN_NO_SECOND_TYPE
+  TKN_NO_SECOND_TYPE,
+  TKN_EOF
 };
