@@ -15,10 +15,10 @@ TokenHandlerC::TokenHandlerC(const vector<TokenC>& tokenVector)
   return;
 }
 
-TokenC TokenHandlerC::peekToken() const
+TokenC TokenHandlerC::peekToken(const uint64_t index) const
 {
-  if (tokens.size())
-    return tokens.front();
+  if (index < tokens.size())
+    return tokens.at(index);
 }
 
 TokenC TokenHandlerC::advanceToken()

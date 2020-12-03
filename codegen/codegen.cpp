@@ -189,13 +189,13 @@ static int codegen_varTerm(const shared_ptr<AstNodeC>& astNode)
         if (astNode->varTerm_globalVariable_variableSize == 8)
           codegenOut.push_back(
             constructInstruction("movq", 
-                                 astNode->varTerm_globalVariable_variableName + "(" + "%rip" + ")" , 
+                                 astNode->varTerm_globalVariable_variableName + "(" + "%rip" + ")", 
                                  "%" + registers.getRegisterName(reg)));
-        
         break;
       }
       break;
   }
+  return reg;
 }
 
 static int codegen_term(const shared_ptr<AstNodeC>& astNode)
@@ -247,9 +247,17 @@ static void codegen_statement(const shared_ptr<AstNodeC> astNode)
   }
   if (astNode->statement_statementType == AST_STATEMENT_DECLARATION)
   {
-    codegenOut.push_back(constructInstruction(".comm", astNode->varTerm_globalVariable_variableName+"," +
+    codegenOut.push_back(constructInstruction(".comm", astNode->varTerm_globalVariable_variableName + "," +
                                               to_string(astNode->varTerm_globalVariable_variableSize) + "," +
                                               "8"));
+  }
+  if (astNode->statement_statementType == AST_STATEMENT_ASSIGNMENT)
+  {
+    const int exprReg = codegen_expr(astNode->statement_statementChild);
+    codegenOut.push_back(constructInstruction("movq",
+                         "%" + registers.getRegisterName(exprReg),
+                         astNode->varTerm_globalVariable_variableName + "(" + "%rip" + ")"));
+    registers.freeRegister(exprReg);
   }
   
   

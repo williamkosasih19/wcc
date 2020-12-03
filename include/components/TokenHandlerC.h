@@ -13,7 +13,7 @@ class TokenHandlerC
   public:
   TokenHandlerC(){};
   TokenHandlerC(const std::vector<TokenC>& tokenVector);
-  TokenC peekToken() const;
+  TokenC peekToken(const uint64_t index = 0) const;
   TokenC advanceToken();
   void skipToken();
   

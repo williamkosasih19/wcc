@@ -81,6 +81,19 @@ static TokenC tokenize_minus()
   return TokenC(TKN_ARITH_OP, "-", startLine, startColumn, TKN_MINUS);
 }
 
+static TokenC tokenize_equals()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  if (io.peek() == '=')
+  {
+    
+  }
+  return TokenC(TKN_EQUALS, "=", startLine, startColumn, TKN_NO_SECOND_TYPE);
+}
+
 static TokenC tokenize_singleCharacterSymbols()
 {
   const uint64_t startLine = io.getLine();
@@ -204,6 +217,9 @@ vector<TokenC> lex(string filePath)
         break;
       case '/':
         tokenVector.push_back(tokenize_slash());
+        break;
+      case '=':
+        tokenVector.push_back(tokenize_equals());
         break;
       default:
         io.skip();

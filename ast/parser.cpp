@@ -54,6 +54,10 @@ static shared_ptr<AstNodeC> parse_term()
     if (!globalSymbolTable.isDeclared(termToken.value))
       fatal("UNDECLARED VARIABLE", termToken);
     term->term_termType = AST_TERM_VAR;
+    
+    term->varTerm_varTermType = AST_VAR_TERM_PLAIN;
+    term->varTerm_varTermSegment = AST_VAR_TERM_GLOBAL;
+    
     term->varTerm_globalVariable_variableName = termToken.value;
     term->varTerm_globalVariable_variableSize = 
       globalSymbolTable.getSize(termToken.value);
@@ -166,6 +170,23 @@ static shared_ptr<AstNodeC> parse_statement()
   {
     if (!globalSymbolTable.isDeclared(currentToken.value))
       fatal("UNDECLARED VARIABLE", currentToken);
+    
+    const TokenC nextToken = tokenHandler.peekToken();
+    
+    switch (nextToken.tokenType)
+    {
+      case TKN_EQUALS:
+        tokenHandler.skipToken();
+        statementAst->type = AST_STATEMENT;
+        statementAst->statement_statementType = AST_STATEMENT_ASSIGNMENT;
+        
+        statementAst->varTerm_varTermSegment = AST_VAR_TERM_GLOBAL;
+        statementAst->varTerm_varTermType = AST_VAR_TERM_PLAIN;
+        
+        statementAst->varTerm_globalVariable_variableSize = globalSymbolTable.getSize(currentToken.value);
+        statementAst->varTerm_globalVariable_variableName = currentToken.value;
+        break;
+    }
   }
   else
   {
