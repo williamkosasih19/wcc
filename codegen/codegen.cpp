@@ -175,38 +175,83 @@ void codegen_exit()
   codegenOut.push_back(constructInstruction("ret"));
 }
 
-//
+static int codegen_varTerm(const shared_ptr<AstNodeC>& astNode)
+{
+  int reg;
+  switch (astNode->varTerm_varTermSegment)
+  {
+    case AST_VAR_TERM_GLOBAL:
+      switch (astNode->varTerm_varTermType)
+      {
+        case AST_VAR_TERM_PLAIN:
+        reg = registers.getRegister();
+        
+        if (astNode->varTerm_globalVariable_variableSize == 8)
+          codegenOut.push_back(
+            constructInstruction("movq", 
+                                 astNode->varTerm_globalVariable_variableName + "(" + "%rip" + ")" , 
+                                 "%" + registers.getRegisterName(reg)));
+        
+        break;
+      }
+      break;
+  }
+}
 
-static int codegen_expr(const shared_ptr<AstNodeC> astNode)
+static int codegen_term(const shared_ptr<AstNodeC>& astNode)
+{
+  switch (astNode->term_termType)
+  {
+    case AST_TERM_INTEGER_CONSTANT:
+      return codegen_load(astNode->integerConstant_intValue);
+      break;
+    case AST_TERM_VAR:
+      return codegen_varTerm(astNode);
+      break;
+  }
+}
+
+static int codegen_expr(const shared_ptr<AstNodeC>& astNode)
 {
   int leftReg, rightReg;
   
-  if (astNode->left)
-    leftReg = codegen_expr(astNode->left);
-  if (astNode->right)
-    rightReg = codegen_expr(astNode->right);
-    
-  switch (astNode->expressionType)
+  if (astNode->expresstion_left)
+    leftReg = codegen_expr(astNode->expresstion_left);
+  if (astNode->expression_right)
+    rightReg = codegen_expr(astNode->expression_right);
+  
+  if (astNode->type == AST_TERM)
+    return codegen_term(astNode);
+  
+  switch (astNode->expr_infixOpType)
   {
-    case AST_EXPRESSION_ADD:
+    case AST_INFIX_ADD:
       return codegen_add(leftReg, rightReg);
-    case AST_EXPRESSION_SUBTRACT:
+    case AST_INFIX_SUB:
       return codegen_subtract(leftReg, rightReg);
-    case AST_EXPRESSION_MULTIPLY:
+    case AST_INFIX_MULTIPLY:
       return codegen_multiply(leftReg, rightReg);
-    case AST_EXPRESSION_DIVIDE:
+    case AST_INFIX_DIVIDE:
       return codegen_divide(leftReg, rightReg);
-    case AST_EXPRESSION_INTEGER:
-      return codegen_load(astNode->intValue);
   }  
 }
 
 static void codegen_statement(const shared_ptr<AstNodeC> astNode)
 {
-  const uint32_t targetReg = codegen_expr(astNode->statementChild);
-  if (astNode->statementType == AST_STATEMENT_PRINT)
+
+  if (astNode->statement_statementType == AST_STATEMENT_PRINT)
+  {
+    const uint32_t targetReg = codegen_expr(astNode->statement_statementChild);
     codegen_printRegister(targetReg);
-  registers.freeRegister(targetReg);
+    registers.freeRegister(targetReg);
+  }
+  if (astNode->statement_statementType == AST_STATEMENT_DECLARATION)
+  {
+    codegenOut.push_back(constructInstruction(".comm", astNode->varTerm_globalVariable_variableName+"," +
+                                              to_string(astNode->varTerm_globalVariable_variableSize) + "," +
+                                              "8"));
+  }
+  
   
   return;
 }

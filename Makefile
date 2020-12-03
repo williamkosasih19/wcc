@@ -32,6 +32,10 @@ lexerTest: $(patsubst %,$(OUTDIR)/%,$(TESTOBJS))
 4ASSEMBLY=lexer.o IoC.o TokenC.o ast.o interpreter.o parser.o TokenHandlerC.o codegen.o 04_assembly.o common.o
 4assembly: $(patsubst %,$(OUTDIR)/%,$(4ASSEMBLY))
 	$(CXX) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(DBGFLAG)
+	
+6VARIABLES=lexer.o IoC.o TokenC.o ast.o interpreter.o parser.o TokenHandlerC.o codegen.o 04_assembly.o common.o symbolTable.o
+6variables: $(patsubst %,$(OUTDIR)/%,$(6VARIABLES))
+	$(CXX) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(DBGFLAG)
 
 clean:
 	rm out/*	
