@@ -68,12 +68,13 @@ char IoC::peekNext()
   return buffer[1];
 }
 
-void IoC::skip()
+void IoC::skip(const uint64_t ammount)
 {
-  if (buffer.size())
+  for (uint64_t i = 0; i < ammount && i < buffer.size(); i++)
+  {
     buffer.pop_front();
-  
-  column++;
+    column++;
+  }
   checkIncrementLine();
 }
 

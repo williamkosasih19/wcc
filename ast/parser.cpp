@@ -14,7 +14,7 @@ using namespace std;
 static TokenHandlerC tokenHandler;
 static globalSymbolTableC globalSymbolTable;
 
-static shared_ptr<AstNodeC> parse_expr();
+static shared_ptr<AstNodeC> parse_expr(const uint32_t precedence = 0);
 
 static ast_infixOpTypeE getExpressionAstTypeFromToken(const TokenC token)
 {
@@ -28,6 +28,18 @@ static ast_infixOpTypeE getExpressionAstTypeFromToken(const TokenC token)
       return AST_INFIX_MULTIPLY;
     case TKN_SLASH:
       return AST_INFIX_DIVIDE;
+    case TKN_GREATER_THAN:
+      return AST_INFIX_GREATER_THAN;
+    case TKN_LESS_THAN:
+      return AST_INFIX_LESS_THAN;
+    case TKN_EQUALS_EQUALS:
+      return AST_INFIX_EQUALS;
+    case TKN_EXCLAMATION_MARK_EQUALS:
+      return AST_INFIX_NOT_EQUALS;
+    case TKN_LESS_THAN_EQUALS:
+      return AST_INFIX_LESS_THAN_EQUALS;
+    case TKN_GREATHER_THAN_EQUALS:
+      return AST_INFIX_GREATER_THAN_EQUALS;
   }
   cerr << "BAD ARITH OPERATION TOKEN " << endl;
   cerr << "at " << token.line << ":" << token.column << endl;
@@ -76,53 +88,114 @@ static shared_ptr<AstNodeC> parse_term()
   return term;
 }
 
-static shared_ptr<AstNodeC> parse_multiplicativeExpr()
-{
-  // shared_ptr<AstNodeC> left = make_shared<AstNodeC>();
-  // left->type = AST_TERM;
+// static shared_ptr<AstNodeC> parse_multiplicativeExpr()
+// {
+//   // shared_ptr<AstNodeC> left = make_shared<AstNodeC>();
+//   // left->type = AST_TERM;
   
-  shared_ptr<AstNodeC> left = parse_term();  
+//   shared_ptr<AstNodeC> left = parse_term();  
   
-  if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON ||
-      tokenHandler.peekToken().tokenType == TKN_CLOSE_PARENTHESIS)
-    return left;
+//   if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON ||
+//       tokenHandler.peekToken().tokenType == TKN_CLOSE_PARENTHESIS)
+//     return left;
   
-  while (tokenHandler.peekToken().secondTokenType == TKN_STAR ||
-         tokenHandler.peekToken().secondTokenType == TKN_SLASH)
-  {
-    const TokenC midToken = tokenHandler.advanceToken();
+//   while (tokenHandler.peekToken().secondTokenType == TKN_STAR ||
+//          tokenHandler.peekToken().secondTokenType == TKN_SLASH)
+//   {
+//     const TokenC midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
     
-    shared_ptr<AstNodeC> right = parse_term();
+//     shared_ptr<AstNodeC> right = parse_term();
     
-    shared_ptr<AstNodeC> tempExpr = make_shared<AstNodeC>();
-    tempExpr->type = AST_EXPRESSION;
-    tempExpr->expresstion_left = left;
-    tempExpr->expression_right = right;
+//     shared_ptr<AstNodeC> tempExpr = make_shared<AstNodeC>();
+//     tempExpr->type = AST_EXPRESSION;
+//     tempExpr->expresstion_left = left;
+//     tempExpr->expression_right = right;
     
-    left = tempExpr;
+//     left = tempExpr;
     
-    left->expr_infixOpType = getExpressionAstTypeFromToken(midToken);
+//     left->expr_infixOpType = getExpressionAstTypeFromToken(midToken);
     
-    if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
-      break;
-  }
-  return left;
-}
+//     if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
+//       break;
+//   }
+//   return left;
+// }
 
-static shared_ptr<AstNodeC> parse_expr()
+// static shared_ptr<AstNodeC> parse_expr()
+// {
+//   shared_ptr<AstNodeC> left;
+//   left = parse_multiplicativeExpr();
+  
+//   if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON ||
+//       tokenHandler.peekToken().tokenType == TKN_CLOSE_PARENTHESIS)
+//     return left;
+    
+//   while (true)
+//   {
+//     const TokenC midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
+    
+//     shared_ptr<AstNodeC> right = parse_multiplicativeExpr();
+    
+//     shared_ptr<AstNodeC> tempExpr = make_shared<AstNodeC>();
+//     tempExpr->type = AST_EXPRESSION;
+//     tempExpr->expresstion_left = left;
+//     tempExpr->expression_right = right;
+    
+//     left = tempExpr;
+//     left->expr_infixOpType = getExpressionAstTypeFromToken(midToken);
+    
+//     if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON)
+//       break;
+//   }
+  
+//   return left;
+// }
+
+static shared_ptr<AstNodeC> parse_expr(const uint32_t precedence)
 {
   shared_ptr<AstNodeC> left;
-  left = parse_multiplicativeExpr();
-  
+  if (precedence < 3)
+    left = parse_expr(precedence + 1);
+  else 
+    left = parse_term();
+    
   if (tokenHandler.peekToken().tokenType == TKN_SEMICOLON ||
       tokenHandler.peekToken().tokenType == TKN_CLOSE_PARENTHESIS)
     return left;
     
-  while (true)
+  while (tokenHandler.peekToken().tokenType != TKN_SEMICOLON)
   {
-    const TokenC midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
+    switch (precedence)
+   {
+     case 0:
+      break;
+    case 1:
+      if (tokenHandler.peekToken().secondTokenType != TKN_STAR &&
+         tokenHandler.peekToken().secondTokenType != TKN_SLASH)
+        return left;
+    case 2:
+      if (tokenHandler.peekToken().secondTokenType != TKN_EQUALS_EQUALS &&
+         tokenHandler.peekToken().secondTokenType != TKN_EXCLAMATION_MARK_EQUALS)
+        return left;
+    case 3:
+      if (tokenHandler.peekToken().secondTokenType != TKN_LESS_THAN &&
+          tokenHandler.peekToken().secondTokenType != TKN_LESS_THAN_EQUALS &&
+          tokenHandler.peekToken().secondTokenType != TKN_GREATER_THAN &&
+          tokenHandler.peekToken().secondTokenType != TKN_GREATHER_THAN_EQUALS)
+          return left;
+   }
     
-    shared_ptr<AstNodeC> right = parse_multiplicativeExpr();
+    TokenC midToken;
+    if (precedence < 2)
+      midToken = tokenHandler.tokenMustBe(TKN_ARITH_OP);
+    else 
+      midToken = tokenHandler.tokenMustBe(TKN_COMPARISON);
+      
+    shared_ptr<AstNodeC> right;
+    if (precedence < 3)
+      right = parse_expr(precedence + 1);
+    else
+      right = parse_term();
     
     shared_ptr<AstNodeC> tempExpr = make_shared<AstNodeC>();
     tempExpr->type = AST_EXPRESSION;
@@ -173,7 +246,7 @@ static shared_ptr<AstNodeC> parse_statement()
     
     const TokenC nextToken = tokenHandler.peekToken();
     
-    switch (nextToken.tokenType)
+    switch (nextToken.secondTokenType)
     {
       case TKN_EQUALS:
         tokenHandler.skipToken();

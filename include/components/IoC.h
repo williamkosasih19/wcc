@@ -22,7 +22,7 @@ class IoC
   char advance();
   char peek();
   char peekNext();
-  void skip();
+  void skip(const uint64_t ammount = 1);
   bool empty();
 
   uint64_t getLine() const;

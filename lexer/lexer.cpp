@@ -18,11 +18,8 @@ static TokenC tokenize_star()
   io.skip();
   if (io.peek() == '=')
   {
-    
-  }
-  else if(io.peek() == '/')
-  {
-    
+    io.skip();
+    return TokenC(TKN_ASSIGNMENT, "*", startLine, startColumn, TKN_STAR_EQUALS);
   }
   return TokenC(TKN_ARITH_OP, "*", startLine, startColumn, TKN_STAR);
 }
@@ -36,13 +33,36 @@ static TokenC tokenize_slash()
   
   if (io.peek() == '=')
   {
-    
+    io.skip();
+    return TokenC(TKN_ASSIGNMENT, "-", startLine, startColumn, TKN_SLASH_EQUALS);
   }
   else if(io.peek() == '/')
   {
-    
+    while(io.advance() != '\n')
+      ;
+  }
+  else if (io.peek() == '*')
+  {
+    while (io.peek() != '/' || io.peekNext() != '*')
+      io.skip();
+    io.skip(2);
   }
   return TokenC(TKN_ARITH_OP, "/", startLine, startColumn, TKN_SLASH);
+}
+
+static TokenC tokenize_exclamationMark()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  
+  if (io.peek() == '=')
+  {
+    io.skip();
+    return TokenC(TKN_COMPARISON, "!=", startLine, startColumn, TKN_EXCLAMATION_MARK_EQUALS);
+  }
+  return TokenC(TKN_ARITH_OP, "!", startLine, startColumn, TKN_EXCLAMATION_MARK);
 }
 
 static TokenC tokenize_plus()
@@ -54,11 +74,13 @@ static TokenC tokenize_plus()
   
   if (io.peek() == '+')
   {
-    
+    io.skip();
+    return TokenC(TKN_ASSIGNMENT, "++", startLine, startColumn, TKN_PLUS_PLUS);
   }
   else if(io.peek() == '=')
   {
-    
+    io.skip();
+    return TokenC(TKN_ASSIGNMENT, "-", startLine, startColumn, TKN_PLUS_EQUALS);
   }
   return TokenC(TKN_ARITH_OP, "+", startLine, startColumn, TKN_PLUS);
 }
@@ -72,11 +94,13 @@ static TokenC tokenize_minus()
   
   if (io.peek() == '-')
   {
-    
+    io.skip();
+    return TokenC(TKN_ASSIGNMENT, "--", startLine, startColumn, TKN_MINUS_MINUS);
   }
   else if(io.peek() == '=')
   {
-    
+    io.skip();
+    return TokenC(TKN_ASSIGNMENT, "-=", startLine, startColumn, TKN_MINUS_EQUALS);
   }
   return TokenC(TKN_ARITH_OP, "-", startLine, startColumn, TKN_MINUS);
 }
@@ -89,9 +113,40 @@ static TokenC tokenize_equals()
   io.skip();
   if (io.peek() == '=')
   {
-    
+    io.skip();
+    return TokenC(TKN_COMPARISON, "==", startLine, startColumn, TKN_EQUALS_EQUALS);
   }
-  return TokenC(TKN_EQUALS, "=", startLine, startColumn, TKN_NO_SECOND_TYPE);
+  return TokenC(TKN_ASSIGNMENT, "=", startLine, startColumn, TKN_EQUALS);
+}
+
+static TokenC tokenize_less_than()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  if (io.peek() == '=')
+  {
+    io.skip();
+      return TokenC(TKN_COMPARISON, "<=", 
+                    startLine, startColumn, TKN_LESS_THAN_EQUALS);
+  }
+  return TokenC(TKN_COMPARISON, "<", startLine, startColumn, TKN_LESS_THAN);
+}
+
+static TokenC tokenize_greater_than()
+{
+  const uint64_t startLine = io.getLine();
+  const uint64_t startColumn = io.getColumn();
+  
+  io.skip();
+  if (io.peek() == '>')
+  {
+    io.skip();
+      return TokenC(TKN_COMPARISON, "=", 
+                    startLine, startColumn, TKN_GREATHER_THAN_EQUALS);
+  }
+  return TokenC(TKN_COMPARISON, ">", startLine, startColumn, TKN_GREATHER_THAN_EQUALS);
 }
 
 static TokenC tokenize_singleCharacterSymbols()
@@ -220,6 +275,15 @@ vector<TokenC> lex(string filePath)
         break;
       case '=':
         tokenVector.push_back(tokenize_equals());
+        break;
+      case '<':
+        tokenVector.push_back(tokenize_less_than());
+        break;
+      case '>':
+        tokenVector.push_back(tokenize_greater_than());
+        break;
+      case '!':
+        tokenVector.push_back(tokenize_exclamationMark());
         break;
       default:
         io.skip();

@@ -53,6 +53,8 @@ string getTokenTypeRepresentation(const TokenTypesE tokenType)
         return "-";
       case TKN_ARITH_OP:
         return "ARITHMETIC_OPERATOR";
+      default:
+        return "UNIMPLEMENTED TOKEN";
   }
 }
 

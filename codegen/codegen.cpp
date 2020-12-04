@@ -12,6 +12,10 @@ using namespace std;
 
 static vector<string> codegenOut;
 
+#define EMIT1(x) codegenOut.push_back(constructInstruction(x));
+#define EMIT2(x, y) codegenOut.push_back(constructInstruction(x, y));
+#define EMIT3(x, y, z) codegenOut.push_back(constructInstruction(x, y, z));
+
 class RegisterC
 {
   private:
@@ -80,18 +84,16 @@ static string constructInstruction(const string& instr,
 static int codegen_load(const uint32_t value)
 {
   const uint32_t regNumber = registers.getRegister();
-  codegenOut.push_back(constructInstruction("movq", 
-                                            "$" + to_string(value), 
-                                            "%" + registers.getRegisterName(regNumber)));
+  EMIT3("movq", "$" + to_string(value), 
+        "%" + registers.getRegisterName(regNumber));
   return regNumber;
 }
 
 static int codegen_add(const uint32_t leftRegisterNumber,
                        const uint32_t rightRegisterNumber)
 {
-  codegenOut.push_back(constructInstruction("addq",
-                                            "%" + registers.getRegisterName(leftRegisterNumber),
-                                            "%" + registers.getRegisterName(rightRegisterNumber)));
+  EMIT3("addq", "%" + registers.getRegisterName(leftRegisterNumber),
+        "%" + registers.getRegisterName(rightRegisterNumber));
   registers.freeRegister(leftRegisterNumber);
   
   return rightRegisterNumber;
@@ -100,9 +102,8 @@ static int codegen_add(const uint32_t leftRegisterNumber,
 static int codegen_subtract(const uint32_t leftRegisterNumber,
                        const uint32_t rightRegisterNumber)
 {
-  codegenOut.push_back(constructInstruction("subq",
-                                            "%" + registers.getRegisterName(rightRegisterNumber),
-                                            "%" + registers.getRegisterName(leftRegisterNumber)));
+  EMIT3("subq", "%" + registers.getRegisterName(rightRegisterNumber),
+        "%" + registers.getRegisterName(leftRegisterNumber));
   registers.freeRegister(rightRegisterNumber);
   
   return leftRegisterNumber;
@@ -111,9 +112,8 @@ static int codegen_subtract(const uint32_t leftRegisterNumber,
 static int codegen_multiply(const uint32_t leftRegisterNumber,
                        const uint32_t rightRegisterNumber)
 {
-  codegenOut.push_back(constructInstruction("imulq",
-                                            "%" + registers.getRegisterName(leftRegisterNumber),
-                                            "%" + registers.getRegisterName(rightRegisterNumber)));
+  EMIT3("imulq", "%" + registers.getRegisterName(leftRegisterNumber),
+        "%" + registers.getRegisterName(rightRegisterNumber));
   registers.freeRegister(leftRegisterNumber);
   
   return rightRegisterNumber;
@@ -122,57 +122,75 @@ static int codegen_multiply(const uint32_t leftRegisterNumber,
 static int codegen_divide(const uint32_t leftRegisterNumber,
                           const uint32_t rightRegisterNumber)
 {
-  codegenOut.push_back(constructInstruction("movq", 
-                                             "%" + registers.getRegisterName(leftRegisterNumber), "%rax"));
-  codegenOut.push_back(constructInstruction("cqo"));
-  codegenOut.push_back(constructInstruction("idivq", "%" + registers.getRegisterName(rightRegisterNumber)));
-  codegenOut.push_back(constructInstruction("movq", "%rax", "%" + registers.getRegisterName(rightRegisterNumber)));
+  const string leftRegisterName = registers.getRegisterName(leftRegisterNumber);
+  const string rightRegisterName = 
+    registers.getRegisterName(rightRegisterNumber);
+  EMIT3("movq", "%" + leftRegisterName, "%rax");
+  EMIT1("cqo");
+  EMIT2("idivq", "%" + rightRegisterName);
+  EMIT3("movq", "%rax", "%" + rightRegisterName);
   registers.freeRegister(leftRegisterNumber);
   
   return rightRegisterNumber;
 }
+
+
+static int codegen_compare(const uint32_t leftRegister,
+                           const uint32_t rightRegister,
+                           const string& instruction)
+{
+  const string leftRegisterName = registers.getRegisterName(leftRegister);
+  const string rightRegisterName = registers.getRegisterName(rightRegister);
+  
+  EMIT3("cmpq", "%" + leftRegisterName,
+       "%" + rightRegisterName);
+  EMIT2(instruction, "%" + leftRegisterName + "b");
+  EMIT3("andq", "$255", "%" + leftRegisterName);
+  registers.freeRegister(rightRegister);
+  return leftRegister;
+}
                        
 void codegen_printRegister(const uint32_t registerNumber)
 {
-  codegenOut.push_back(constructInstruction("movq", "%" + registers.getRegisterName(registerNumber),
-                       "%rdi"));
-  codegenOut.push_back(constructInstruction("call", "DEBUG_PRINTINT"));
+  EMIT3("movq", "%" + registers.getRegisterName(registerNumber),
+                       "%rdi");
+  EMIT2("call", "DEBUG_PRINTINT");
 }
 
 void codegen_setup()
 {
   registers.freeAll();
-  codegenOut.push_back(constructInstruction(".text"));
+  EMIT1(".text");
   codegenOut.push_back(".PRINTINTFORMAT:");
-  codegenOut.push_back(constructInstruction(".string", "\"The result is: %d\\n\""));
+  EMIT2(".string", "\"The result is: %d\\n\"");
   
   codegenOut.push_back("DEBUG_PRINTINT:");
-  codegenOut.push_back(constructInstruction("pushq", "%rbp"));
-  codegenOut.push_back(constructInstruction("movq", "%rsp", "%rbp"));
-  codegenOut.push_back(constructInstruction("subq", "$16", "%rsp"));
-  codegenOut.push_back(constructInstruction("movq", "%rdi", "-8(%rbp)"));
-  codegenOut.push_back(constructInstruction("movq", "%rdi", "%rax"));
-  codegenOut.push_back(constructInstruction("movq", "%rdi", "%rsi"));
-  codegenOut.push_back(constructInstruction("leaq", ".PRINTINTFORMAT(%rip)", "%rdi"));
-  codegenOut.push_back(constructInstruction("movl", "$0", "%eax"));
-  codegenOut.push_back(constructInstruction("call", "printf@PLT"));
-  codegenOut.push_back(constructInstruction("leave"));
-  codegenOut.push_back(constructInstruction("ret"));
+  EMIT2("pushq", "%rbp");
+  EMIT3("movq", "%rsp", "%rbp");
+  EMIT3("subq", "$16", "%rsp");
+  EMIT3("movq", "%rdi", "-8(%rbp)");
+  EMIT3("movq", "%rdi", "%rax");
+  EMIT3("movq", "%rdi", "%rsi");
+  EMIT3("leaq", ".PRINTINTFORMAT(%rip)", "%rdi");
+  EMIT3("movl", "$0", "%eax");
+  EMIT2("call", "printf@PLT");
+  EMIT1("leave");
+  EMIT1("ret");
   
-  codegenOut.push_back(constructInstruction(".globl", "main"));
-  codegenOut.push_back(constructInstruction(".type", "main", "@function"));
+  EMIT2(".globl", "main");
+  EMIT3(".type", "main", "@function");
   
   codegenOut.push_back("main:");
-  codegenOut.push_back(constructInstruction("pushq", "%rbp"));
-  codegenOut.push_back(constructInstruction("movq", "%rsp", "%rbp"));
+  EMIT2("pushq", "%rbp");
+  EMIT3("movq", "%rsp", "%rbp");
   
 }
                        
 void codegen_exit()
 {
-  codegenOut.push_back(constructInstruction("movq", "$0", "%rax"));
-  codegenOut.push_back(constructInstruction("popq", "%rbp"));
-  codegenOut.push_back(constructInstruction("ret"));
+  EMIT3("movq", "$0", "%rax");
+  EMIT2("popq", "%rbp");
+  EMIT1("ret");
 }
 
 static int codegen_varTerm(const shared_ptr<AstNodeC>& astNode)
@@ -233,6 +251,18 @@ static int codegen_expr(const shared_ptr<AstNodeC>& astNode)
       return codegen_multiply(leftReg, rightReg);
     case AST_INFIX_DIVIDE:
       return codegen_divide(leftReg, rightReg);
+    case AST_INFIX_EQUALS:
+      return codegen_compare(leftReg, rightReg, "sete");
+    case AST_INFIX_NOT_EQUALS:
+      return codegen_compare(leftReg, rightReg, "setne");
+    case AST_INFIX_LESS_THAN:
+      return codegen_compare(leftReg, rightReg, "setlt");
+    case AST_INFIX_GREATER_THAN:
+      return codegen_compare(leftReg, rightReg, "setgt");
+    case AST_INFIX_LESS_THAN_EQUALS:
+      return codegen_compare(leftReg, rightReg, "setle");
+    case AST_INFIX_GREATER_THAN_EQUALS:
+      return codegen_compare(leftReg, rightReg, "setge");
   }  
 }
 
@@ -247,16 +277,15 @@ static void codegen_statement(const shared_ptr<AstNodeC> astNode)
   }
   if (astNode->statement_statementType == AST_STATEMENT_DECLARATION)
   {
-    codegenOut.push_back(constructInstruction(".comm", astNode->varTerm_globalVariable_variableName + "," +
+    EMIT2(".comm", astNode->varTerm_globalVariable_variableName + "," +
                                               to_string(astNode->varTerm_globalVariable_variableSize) + "," +
-                                              "8"));
+                                              "8");
   }
   if (astNode->statement_statementType == AST_STATEMENT_ASSIGNMENT)
   {
     const int exprReg = codegen_expr(astNode->statement_statementChild);
-    codegenOut.push_back(constructInstruction("movq",
-                         "%" + registers.getRegisterName(exprReg),
-                         astNode->varTerm_globalVariable_variableName + "(" + "%rip" + ")"));
+    EMIT3("movq", "%" + registers.getRegisterName(exprReg),
+          astNode->varTerm_globalVariable_variableName + "(" + "%rip" + ")");
     registers.freeRegister(exprReg);
   }
   
